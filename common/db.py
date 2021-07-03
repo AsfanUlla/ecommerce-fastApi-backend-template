@@ -3,3 +3,7 @@ import motor.motor_asyncio
 
 client = motor.motor_asyncio.AsyncIOMotorClient(Config.MONGODB_URL)
 db = client[Config.MONGODB_DB]
+
+collections = dict(
+    users=db.users,
+)

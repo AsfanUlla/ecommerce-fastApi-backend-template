@@ -6,6 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from common.views import MongoInterface
 from common.utils import get_password_hash, verify_password, create_access_token
 from datetime import timedelta
+from common.db import collections
 
 router = APIRouter()
 
@@ -13,7 +14,7 @@ router = APIRouter()
 @router.post("/register", response_model=SchemalessResponse)
 async def add_user(user: AddUserSchema = Body(..., )):
     user_doc = await MongoInterface.find_or_none(
-        'users',
+        collections['users'],
         query=dict(
             email=user.email
         ), exclude=dict(
@@ -28,25 +29,25 @@ async def add_user(user: AddUserSchema = Body(..., )):
         dict(
             disabled=True,
             is_verified=False,
-            is_staff=False,
+            is_teacher=False,
             is_admin=False,
             is_su_admin=False,
         )
     )
-    user_add = await MongoInterface.insert_one('users', post_obj)
-    response = dict(
+    user_add = await MongoInterface.insert_one(collections['users'], post_obj)
+    response = SchemalessResponse(
         data=dict(
             success=True
         ),
         message="user created successfully"
     )
-    return JSONResponse(response)
+    return JSONResponse(jsonable_encoder(response))
 
 
 @router.post('/login', response_model=SchemalessResponse)
 async def user_login(login: UserLoginSchema = Body(...)):
     user = await MongoInterface.find_or_404(
-        'users',
+        collections['users'],
         query=dict(
             email=login.user_email
         ),
@@ -62,11 +63,11 @@ async def user_login(login: UserLoginSchema = Body(...)):
         ),
         expires_delta=timedelta(days=5)
     )
-    response = dict(
+    response = SchemalessResponse(
         data=dict(
             token=user_token,
             success=True
         ),
         message="user logged in"
     )
-    return JSONResponse(response)
+    return JSONResponse(jsonable_encoder(response))
