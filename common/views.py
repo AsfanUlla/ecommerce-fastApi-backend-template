@@ -67,7 +67,7 @@ class MongoInterface:
                         ) for key, values in kwargs.get("data").items()
                     ]
                 )
-            if kwargs.get("q_type") == "push":
+            elif kwargs.get("q_type") == "push":
                 await kwargs.get("collection_name").bulk_write(
                     [
                         UpdateOne(
@@ -81,6 +81,25 @@ class MongoInterface:
                         ) for key, values in kwargs.get("data").items()
                     ]
                 )
+            else:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid query type")
         except BulkWriteError as bwe:
             raise HTTPException(status_code=bwe.code, detail=str(bwe.details))
         return True
+
+    @staticmethod
+    async def update_doc(**kwargs):
+        if kwargs.get("q_type") == 'push':
+            return await kwargs.get("collection_name").update_one(
+                kwargs.get("query"),
+                {"$push": kwargs.get("update_data")},
+                upsert=True
+            )
+        elif kwargs.get("q_type") == 'set':
+            return await kwargs.get("collection_name").update_one(
+                kwargs.get("query"),
+                {"$set": kwargs.get("update_data")},
+                upsert=True
+            )
+        else:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid query type")
