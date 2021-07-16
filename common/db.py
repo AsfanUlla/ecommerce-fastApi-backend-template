@@ -6,4 +6,5 @@ db = client[Config.MONGODB_DB]
 
 collections = dict(
     users=db.users,
+    org=db.org,
 )

@@ -6,10 +6,30 @@ from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid objectid")
+        return ObjectId(v)
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(type="string")
+
+
 class MongoInterface:
 
     @staticmethod
-    async def insert_one(collection_name, post_obj):
+    async def insert_one(collection_name, post_obj, exist_query=None, error_message="DOC exists"):
+        if exist_query:
+            doc_exist = await collection_name.find_one(exist_query, {"_id": 1})
+            if doc_exist:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error_message)
         post_obj = jsonable_encoder(post_obj)
         post_obj['cd'] = datetime.utcnow()
         doc = await collection_name.insert_one(post_obj)

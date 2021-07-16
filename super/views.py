@@ -53,3 +53,34 @@ async def user_permissions(data: Dict[str, UserUpdateData] = Body(...), token: s
     )
 
     return JSONResponse(jsonable_encoder(response))
+
+
+@router.post("/add_admin", response_model=SchemalessResponse)
+async def add_admin(data: AddAdmin = Body(...), token: str = Header(...)):
+    user, payload = await verify_token(token)
+    if not user["is_su_admin"]:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Illegal token")
+    local_user = await MongoInterface.find_or_404(
+        collection_name=collections["users"],
+        query=dict(
+            _id=data.user_id
+        ),
+        error_message="User Not Found"
+    )
+    data.user_id = str(data.user_id)
+    await MongoInterface.insert_one(
+        collection_name=collections["org"],
+        post_obj=data,
+        exist_query=dict(
+            user_id=data.user_id
+        ),
+        error_message="User is already Admin"
+    )
+    response = SchemalessResponse(
+        data=dict(
+            success=True,
+        ),
+        message="Admin added"
+    )
+
+    return JSONResponse(jsonable_encoder(response))
