@@ -7,7 +7,7 @@
 * (note - request config.py from su User)
 
 ## Installation
-* ```shell
+```shell
 git clone https://github.com/AsfanUlla/pi-backend.git
 cd pi-backend
 python3 -m venv venv
